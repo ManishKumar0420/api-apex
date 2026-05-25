@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --brand:       #534AB7;
+  --brand-mid:   #7F77DD;
+  --brand-light: #EEEDFE;
+  --brand-dark:  #3C3489;
+  --teal:        #1D9E75;
+  --teal-light:  #E1F5EE;
+  --teal-mid:    #9FE1CB;
+  --danger:      #E24B4A;
+  --code-bg:     #0C0F12;
+  --text-1:      #111827;
+  --text-2:      #6b7280;
+  --text-3:      #9ca3af;
+  --border:      #e5e7eb;
+  --surface:     #fafafa;
+  --bg:          #f9fafb;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-1);
+  line-height: 1.6;
 }
+
+input, select, textarea, button { font-family: inherit; }
+
+@keyframes apixFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes apixBlink {
+  0%, 88%, 100% { ry: 5; }
+  92%            { ry: 1; }
+}
+
+.apix-root { animation: apixFloat 3.2s ease-in-out infinite; }
+.apix-eye  { animation: apixBlink 4s ease-in-out infinite; }
