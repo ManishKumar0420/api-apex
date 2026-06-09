@@ -18,9 +18,9 @@ import { User } from "@/lib/db/models/User";
 import { connectDB } from "@/lib/db/connection";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
@@ -32,7 +32,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     logger.logRequest("DELETE", `/api/users/${id}`, "NONE");
 

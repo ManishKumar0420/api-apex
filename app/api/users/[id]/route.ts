@@ -20,9 +20,9 @@ import { User } from "@/lib/db/models/User";
 import { connectDB } from "@/lib/db/connection";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check API Key authentication
     const auth = await checkAuth(request, AuthType.API_KEY);
