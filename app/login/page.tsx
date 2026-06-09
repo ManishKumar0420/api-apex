@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Mascot from "@/components/Mascot";
@@ -18,9 +18,15 @@ export default function LoginPage() {
   };
 
   const inp = {
-    width: "100%", boxSizing: "border-box", padding: "11px 14px",
-    fontSize: 14, borderRadius: 8, border: "1px solid #e5e7eb",
-    background: "#fafafa", color: "#111827", outline: "none",
+    width: "100%",
+    boxSizing: "border-box" as const,
+    padding: "11px 14px",
+    fontSize: 14,
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    background: "#fafafa",
+    color: "#111827",
+    outline: "none",
     fontFamily: "inherit",
   };
 
@@ -40,13 +46,13 @@ export default function LoginPage() {
         <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32 }}>Sign in to your Apix workspace</p>
 
         <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 7 }}>Email</label>
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" style={{ ...inp, marginBottom: 18 }} />
+        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" style={{ ...inp, marginBottom: 18 } as any} />
 
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>Password</label>
           <button type="button" style={{ fontSize: 12, color: "#534AB7", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Forgot?</button>
         </div>
-        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inp, marginBottom: 28 }} />
+        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inp, marginBottom: 28 } as any} />
 
         <button type="submit" disabled={loading} style={{ width: "100%", background: loading ? "#7F77DD" : "#534AB7", color: "#fff", border: "none", padding: "13px", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: loading ? "default" : "pointer" }}>
           {loading ? "Signing in…" : "Sign in →"}
