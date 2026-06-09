@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       logger.warn("User already exists", { email });
-      return serverErrorResponse("User with this email already exists", 409);
+      return serverErrorResponse("User with this email already exists");
     }
 
     // Create user in database
