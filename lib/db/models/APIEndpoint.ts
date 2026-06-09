@@ -1,5 +1,5 @@
 import { Schema, model, Document, models } from "mongoose";
-import { APIEndpoint } from "@/lib/types";
+import type { APIEndpoint as APIEndpointType } from "@/lib/types";
 
 /**
  * API ENDPOINT MODEL
@@ -17,7 +17,7 @@ import { APIEndpoint } from "@/lib/types";
  * - chainableWith: IDs of other APIs this can chain with
  */
 
-interface APIEndpointDocument extends APIEndpoint, Document {}
+interface APIEndpointDocument extends Omit<APIEndpointType, '_id'>, Document {}
 
 const apiEndpointSchema = new Schema<APIEndpointDocument>(
   {
@@ -44,7 +44,7 @@ const apiEndpointSchema = new Schema<APIEndpointDocument>(
       type: String,
       enum: ["none", "apiKey", "jwt"],
       default: "none"
-    },
+    } as any,
     requestSchema: {
       type: Schema.Types.Mixed,
       default: {}
@@ -58,5 +58,5 @@ const apiEndpointSchema = new Schema<APIEndpointDocument>(
   { timestamps: true }
 );
 
-export const APIEndpoint =
+export const APIEndpointModel =
   models.APIEndpoint || model<APIEndpointDocument>("APIEndpoint", apiEndpointSchema);
