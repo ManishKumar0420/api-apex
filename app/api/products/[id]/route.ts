@@ -2,20 +2,24 @@
  * API ROUTE: GET /api/products/[id]
  * ==================================
  * AUTHENTICATION: No Auth
- * 
+ *
  * Gets a single product from database by ID
  */
 
 import { NextRequest } from "next/server";
-import { successResponse, serverErrorResponse, notFoundResponse } from "@/lib/responses";
+import {
+  successResponse,
+  serverErrorResponse,
+  notFoundResponse,
+} from "@/lib/responses";
 import { AppLogger, generateRequestId } from "@/lib/logger";
 import { Product } from "@/lib/db/models/Product";
 import { connectDB } from "@/lib/db/connection";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -27,7 +31,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Connect to database
     await connectDB();
 
-    const { id } = params;
+    // Next.js 15 requires awaiting params
+    const { id } = await params;
 
     logger.logRequest("GET", `/api/products/${id}`, "NONE");
 
@@ -40,6 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const responseTime = performance.now() - startTime;
+
     logger.logResponse("GET", `/api/products/${id}`, 200, responseTime);
 
     return successResponse(product, 200);
