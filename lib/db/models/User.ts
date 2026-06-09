@@ -14,9 +14,9 @@ import { User as IUser } from "@/lib/types";
  * - createdAt/updatedAt: Timestamps
  */
 
-interface UserDocument extends IUser, Document {}
 
-const userSchema = new Schema<UserDocument>(
+
+const userSchema = new Schema<IUser>(
   {
     email: {
       type: String,
@@ -41,4 +41,4 @@ const userSchema = new Schema<UserDocument>(
   { timestamps: true }
 );
 
-export const User = models.User || model<UserDocument>("User", userSchema);
+export const User = models.User || model<IUser>("User", userSchema);
