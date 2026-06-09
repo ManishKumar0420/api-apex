@@ -1,4 +1,5 @@
 import pino, { Logger as PinoLogger } from "pino";
+import pretty from "pino-pretty"; // 1. Imported directly to bypass dynamic thread bundling
 import { v4 as uuidv4 } from "uuid";
 import { LogEntry } from "@/lib/db/models/LogEntry";
 import { connectDB } from "@/lib/db/connection";
@@ -6,35 +7,20 @@ import { connectDB } from "@/lib/db/connection";
 /**
  * LOGGER SYSTEM FOR API TESTING PLATFORM
  * ========================================
- * 
- * This is a comprehensive logging solution that:
- * - Logs all API requests and responses
- * - Tracks performance metrics (response times)
- * - Stores logs in MongoDB for later retrieval
- * - Provides real-time log viewing in UI
- * - Includes request IDs for tracing
- * 
- * Features:
- * - Pino logger for high-performance logging
- * - Request ID generation for request tracking
- * - Context-aware logging
- * - Multiple log levels (debug, info, warn, error)
- * - Structured logging with JSON output
- * - Database persistence for audit trail
  */
 
-// Configure pino logger
-const logger: PinoLogger = pino({
-  level: process.env.NODE_ENV === "production" ? "info" : "debug",
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:standard",
-      ignore: "pid,hostname"
-    }
-  }
-});
+const isDev = process.env.NODE_ENV !== "production";
+
+// 2. Configure pino logger using a direct stream wrapper for dev
+const logger: PinoLogger = pino(
+  isDev
+    ? pretty({
+        colorize: true,
+        translateTime: "SYS:standard",
+        ignore: "pid,hostname",
+      })
+    : { level: "info" }, // Standard optimized JSON output for production
+);
 
 /**
  * Generates unique request ID for tracing
@@ -56,7 +42,11 @@ export class AppLogger {
   /**
    * Save log to database
    */
-  private async saveToDatabase(level: string, message: string, context?: Record<string, any>) {
+  private async saveToDatabase(
+    level: string,
+    message: string,
+    context?: Record<string, any>,
+  ) {
     try {
       await connectDB();
       await LogEntry.create({
@@ -65,10 +55,9 @@ export class AppLogger {
         message,
         context,
         requestId: this.requestId,
-        duration: context?.responseTimeMs
+        duration: context?.responseTimeMs,
       });
     } catch (dbError) {
-      // Fallback: just log to console if DB fails
       console.error("Failed to save log to database:", dbError);
     }
   }
@@ -80,13 +69,12 @@ export class AppLogger {
     logger.info(
       {
         requestId: this.requestId,
-        ...context
+        ...context,
       },
-      message
+      message,
     );
-    // Save to database asynchronously
-    this.saveToDatabase("info", message, context).catch(err => 
-      console.error("Error saving info log:", err)
+    this.saveToDatabase("info", message, context).catch((err) =>
+      console.error("Error saving info log:", err),
     );
   }
 
@@ -96,13 +84,12 @@ export class AppLogger {
   error(message: string, error?: Error | Record<string, any>) {
     const errorContext = {
       requestId: this.requestId,
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
     };
     logger.error(errorContext, message);
-    
-    // Save to database asynchronously
-    this.saveToDatabase("error", message, errorContext).catch(err => 
-      console.error("Error saving error log:", err)
+
+    this.saveToDatabase("error", message, errorContext).catch((err) =>
+      console.error("Error saving error log:", err),
     );
   }
 
@@ -113,14 +100,13 @@ export class AppLogger {
     logger.warn(
       {
         requestId: this.requestId,
-        ...context
+        ...context,
       },
-      message
+      message,
     );
-    
-    // Save to database asynchronously
-    this.saveToDatabase("warn", message, context).catch(err => 
-      console.error("Error saving warn log:", err)
+
+    this.saveToDatabase("warn", message, context).catch((err) =>
+      console.error("Error saving warn log:", err),
     );
   }
 
@@ -131,14 +117,13 @@ export class AppLogger {
     logger.debug(
       {
         requestId: this.requestId,
-        ...context
+        ...context,
       },
-      message
+      message,
     );
-    
-    // Save to database asynchronously
-    this.saveToDatabase("debug", message, context).catch(err => 
-      console.error("Error saving debug log:", err)
+
+    this.saveToDatabase("debug", message, context).catch((err) =>
+      console.error("Error saving debug log:", err),
     );
   }
 
@@ -150,7 +135,7 @@ export class AppLogger {
       type: "REQUEST",
       method,
       path,
-      authType: auth || "NONE"
+      authType: auth || "NONE",
     });
   }
 
@@ -162,7 +147,7 @@ export class AppLogger {
     path: string,
     statusCode: number,
     responseTime: number,
-    dataSize?: number
+    dataSize?: number,
   ) {
     this.info(`${method} ${path} - ${statusCode}`, {
       type: "RESPONSE",
@@ -170,7 +155,7 @@ export class AppLogger {
       path,
       statusCode,
       responseTimeMs: responseTime,
-      dataSizeBytes: dataSize
+      dataSizeBytes: dataSize,
     });
   }
 
@@ -183,7 +168,7 @@ export class AppLogger {
 }
 
 /**
- * In-memory log storage for dashboard (production would use database)
+ * In-memory log storage for dashboard
  */
 export class InMemoryLogStore {
   private logs: Map<string, any[]> = new Map();
@@ -197,10 +182,9 @@ export class InMemoryLogStore {
     const logs = this.logs.get(requestId)!;
     logs.push({
       ...log,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
-    // Keep only recent logs
     if (logs.length > this.maxLogsPerRequest) {
       logs.shift();
     }
@@ -219,12 +203,7 @@ export class InMemoryLogStore {
   }
 }
 
-// Global log store instance
 export const logStore = new InMemoryLogStore();
-
-/**
- * Global logger instance
- */
 export const globalLogger = new AppLogger();
 
 export default logger;
