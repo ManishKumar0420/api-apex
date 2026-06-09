@@ -3,12 +3,14 @@
  * ==================================
  * AUTHENTICATION: No Auth
  * 
- * Gets a single product by ID
+ * Gets a single product from database by ID
  */
 
 import { NextRequest } from "next/server";
 import { successResponse, serverErrorResponse, notFoundResponse } from "@/lib/responses";
 import { AppLogger, generateRequestId } from "@/lib/logger";
+import { Product } from "@/lib/db/models/Product";
+import { connectDB } from "@/lib/db/connection";
 
 interface RouteParams {
   params: {
@@ -22,31 +24,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const startTime = performance.now();
 
   try {
+    // Connect to database
+    await connectDB();
+
     const { id } = params;
 
     logger.logRequest("GET", `/api/products/${id}`, "NONE");
 
-    // Simulated product lookup
-    const products: Record<string, any> = {
-      "1": {
-        id: "1",
-        name: "Laptop",
-        description: "High-performance laptop",
-        price: 999.99,
-        stock: 50,
-        createdAt: new Date()
-      },
-      "2": {
-        id: "2",
-        name: "Mouse",
-        description: "Wireless mouse",
-        price: 29.99,
-        stock: 200,
-        createdAt: new Date()
-      }
-    };
-
-    const product = products[id];
+    // Find product in database
+    const product = await Product.findById(id).lean();
 
     if (!product) {
       logger.warn("Product not found", { productId: id });

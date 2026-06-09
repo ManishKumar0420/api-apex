@@ -1,5 +1,5 @@
 import { Schema, model, Document, models } from "mongoose";
-import { LogEntry } from "@/lib/types";
+import { LogEntry as LogEntryType } from "@/lib/types";
 
 /**
  * LOG ENTRY MODEL
@@ -14,7 +14,7 @@ import { LogEntry } from "@/lib/types";
  * - duration: Response time in milliseconds
  */
 
-interface LogEntryDocument extends LogEntry, Document {}
+interface LogEntryDocument extends LogEntryType, Document {}
 
 const logEntrySchema = new Schema<LogEntryDocument>(
   {
@@ -47,5 +47,4 @@ const logEntrySchema = new Schema<LogEntryDocument>(
 // TTL index to auto-delete logs after 30 days
 logEntrySchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
 
-export const LogEntry =
-  models.LogEntry || model<LogEntryDocument>("LogEntry", logEntrySchema);
+export const LogEntry = models.LogEntry || model<LogEntryDocument>("LogEntry", logEntrySchema);

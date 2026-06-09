@@ -1,5 +1,7 @@
 import pino, { Logger as PinoLogger } from "pino";
 import { v4 as uuidv4 } from "uuid";
+import { LogEntry } from "@/lib/db/models/LogEntry";
+import { connectDB } from "@/lib/db/connection";
 
 /**
  * LOGGER SYSTEM FOR API TESTING PLATFORM
@@ -18,6 +20,7 @@ import { v4 as uuidv4 } from "uuid";
  * - Context-aware logging
  * - Multiple log levels (debug, info, warn, error)
  * - Structured logging with JSON output
+ * - Database persistence for audit trail
  */
 
 // Configure pino logger
@@ -51,6 +54,26 @@ export class AppLogger {
   }
 
   /**
+   * Save log to database
+   */
+  private async saveToDatabase(level: string, message: string, context?: Record<string, any>) {
+    try {
+      await connectDB();
+      await LogEntry.create({
+        timestamp: new Date(),
+        level: level as "info" | "warn" | "error" | "debug",
+        message,
+        context,
+        requestId: this.requestId,
+        duration: context?.responseTimeMs
+      });
+    } catch (dbError) {
+      // Fallback: just log to console if DB fails
+      console.error("Failed to save log to database:", dbError);
+    }
+  }
+
+  /**
    * Info level logging
    */
   info(message: string, context?: Record<string, any>) {
@@ -61,18 +84,25 @@ export class AppLogger {
       },
       message
     );
+    // Save to database asynchronously
+    this.saveToDatabase("info", message, context).catch(err => 
+      console.error("Error saving info log:", err)
+    );
   }
 
   /**
    * Error level logging
    */
   error(message: string, error?: Error | Record<string, any>) {
-    logger.error(
-      {
-        requestId: this.requestId,
-        error: error instanceof Error ? error.message : error
-      },
-      message
+    const errorContext = {
+      requestId: this.requestId,
+      error: error instanceof Error ? error.message : error
+    };
+    logger.error(errorContext, message);
+    
+    // Save to database asynchronously
+    this.saveToDatabase("error", message, errorContext).catch(err => 
+      console.error("Error saving error log:", err)
     );
   }
 
@@ -87,6 +117,11 @@ export class AppLogger {
       },
       message
     );
+    
+    // Save to database asynchronously
+    this.saveToDatabase("warn", message, context).catch(err => 
+      console.error("Error saving warn log:", err)
+    );
   }
 
   /**
@@ -99,6 +134,11 @@ export class AppLogger {
         ...context
       },
       message
+    );
+    
+    // Save to database asynchronously
+    this.saveToDatabase("debug", message, context).catch(err => 
+      console.error("Error saving debug log:", err)
     );
   }
 

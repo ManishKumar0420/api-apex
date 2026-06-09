@@ -3,9 +3,10 @@
  * =============================
  * AUTHENTICATION: API Key
  * 
- * Fetches all products
+ * Fetches all products from database
  * This endpoint demonstrates:
  * - API Key authentication
+ * - Database retrieval
  * - Array response with metadata
  */
 
@@ -14,6 +15,8 @@ import { checkAuth, authErrorResponse } from "@/lib/auth";
 import { successResponse, serverErrorResponse } from "@/lib/responses";
 import { AuthType } from "@/lib/types";
 import { AppLogger, generateRequestId } from "@/lib/logger";
+import { Product } from "@/lib/db/models/Product";
+import { connectDB } from "@/lib/db/connection";
 
 export async function GET(request: NextRequest) {
   const requestId = generateRequestId();
@@ -21,6 +24,9 @@ export async function GET(request: NextRequest) {
   const startTime = performance.now();
 
   try {
+    // Connect to database
+    await connectDB();
+
     // Check API Key authentication
     const auth = await checkAuth(request, AuthType.API_KEY);
     if (!auth.authenticated) {
@@ -30,32 +36,8 @@ export async function GET(request: NextRequest) {
 
     logger.logRequest("GET", "/api/products", "API_KEY");
 
-    const products = [
-      {
-        id: "1",
-        name: "Laptop",
-        description: "High-performance laptop",
-        price: 999.99,
-        stock: 50,
-        createdAt: new Date()
-      },
-      {
-        id: "2",
-        name: "Mouse",
-        description: "Wireless mouse",
-        price: 29.99,
-        stock: 200,
-        createdAt: new Date()
-      },
-      {
-        id: "3",
-        name: "Keyboard",
-        description: "Mechanical keyboard",
-        price: 149.99,
-        stock: 75,
-        createdAt: new Date()
-      }
-    ];
+    // Fetch products from database
+    const products = await Product.find().lean();
 
     const responseTime = performance.now() - startTime;
     logger.logResponse("GET", "/api/products", 200, responseTime);

@@ -3,11 +3,12 @@
  * ===============================
  * AUTHENTICATION: API Key
  * 
- * Updates a user by ID
+ * Updates a user in database by ID
  * This endpoint demonstrates:
  * - Dynamic route parameters
  * - API Key authentication
  * - Update operations
+ * - Database persistence
  */
 
 import { NextRequest } from "next/server";
@@ -15,6 +16,8 @@ import { checkAuth, authErrorResponse } from "@/lib/auth";
 import { successResponse, serverErrorResponse, notFoundResponse, validationError } from "@/lib/responses";
 import { AuthType } from "@/lib/types";
 import { AppLogger, generateRequestId } from "@/lib/logger";
+import { User } from "@/lib/db/models/User";
+import { connectDB } from "@/lib/db/connection";
 
 interface RouteParams {
   params: {
@@ -28,6 +31,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const startTime = performance.now();
 
   try {
+    // Connect to database
+    await connectDB();
+
     const { id } = params;
 
     // Check API Key authentication
@@ -41,35 +47,34 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Parse request body
     const body = await request.json();
-    const { name, email } = body;
+    const { email } = body;
 
     // Validation
-    if (name && (typeof name !== "string" || name.trim().length === 0)) {
-      return validationError("name", "Must be a non-empty string");
-    }
-
     if (email && !email.includes("@")) {
       return validationError("email", "Must be a valid email address");
     }
 
-    // Simulated update (in real app, would check if user exists)
-    if (id === "invalid") {
+    // Find and update user in database
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { email: email ? email.toLowerCase() : undefined },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
       logger.warn("User not found", { userId: id });
       return notFoundResponse("User");
     }
 
-    const updatedUser = {
-      id,
-      name: name || "John Doe",
-      email: email || "john@example.com",
-      updatedAt: new Date()
-    };
-
     const responseTime = performance.now() - startTime;
     logger.logResponse("PUT", `/api/users/${id}`, 200, responseTime);
-    logger.info("User updated successfully", { userId: id });
+    logger.info("User updated successfully in database", { userId: id });
 
-    return successResponse(updatedUser, 200);
+    return successResponse({
+      id: updatedUser._id,
+      email: updatedUser.email,
+      updatedAt: updatedUser.updatedAt
+    }, 200);
   } catch (error) {
     logger.error("Error updating user", error as Error);
     return serverErrorResponse("Failed to update user");

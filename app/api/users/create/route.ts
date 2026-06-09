@@ -1,13 +1,13 @@
 /**
- * API ROUTE: POST /api/users
- * ===========================
+ * API ROUTE: POST /api/users/create
+ * ==================================
  * AUTHENTICATION: JWT
  * 
- * Creates a new user with validation
+ * Creates a new user with validation and saves to database
  * This endpoint demonstrates:
  * - Request validation
+ * - Database persistence
  * - Error handling
- * - Data creation
  */
 
 import { NextRequest } from "next/server";
@@ -15,6 +15,8 @@ import { checkAuth, authErrorResponse } from "@/lib/auth";
 import { successResponse, serverErrorResponse, validationError } from "@/lib/responses";
 import { AuthType } from "@/lib/types";
 import { AppLogger, generateRequestId } from "@/lib/logger";
+import { User } from "@/lib/db/models/User";
+import { connectDB } from "@/lib/db/connection";
 
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
@@ -22,6 +24,9 @@ export async function POST(request: NextRequest) {
   const startTime = performance.now();
 
   try {
+    // Connect to database
+    await connectDB();
+
     // Check JWT authentication
     const auth = await checkAuth(request, AuthType.JWT);
     if (!auth.authenticated) {
@@ -29,7 +34,7 @@ export async function POST(request: NextRequest) {
       return authErrorResponse(auth.error || "Unauthorized");
     }
 
-    logger.logRequest("POST", "/api/users", "JWT");
+    logger.logRequest("POST", "/api/users/create", "JWT");
 
     // Parse request body
     const body = await request.json();
@@ -46,22 +51,39 @@ export async function POST(request: NextRequest) {
       return validationError("email", "Must be a valid email address");
     }
 
-    // Simulated user creation
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      createdAt: new Date()
-    };
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      logger.warn("User already exists", { email });
+      return serverErrorResponse("User with this email already exists", 409);
+    }
+
+    // Create user in database
+    const newUser = new User({
+      email: email.toLowerCase(),
+      password: "hashed_password_placeholder", // In production, hash the password
+      apiKey: `key_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      jwtSecret: Math.random().toString(36).substr(2)
+    });
+
+    await newUser.save();
 
     const responseTime = performance.now() - startTime;
-    logger.logResponse("POST", "/api/users", 201, responseTime);
-    logger.info("User created successfully", {
-      userId: newUser.id,
+    logger.logResponse("POST", "/api/users/create", 201, responseTime);
+    logger.info("User created successfully in database", {
+      userId: newUser._id,
       email: newUser.email
     });
 
-    return successResponse(newUser, 201);
+    return successResponse(
+      {
+        id: newUser._id,
+        email: newUser.email,
+        apiKey: newUser.apiKey,
+        createdAt: newUser.createdAt
+      },
+      201
+    );
   } catch (error) {
     logger.error("Error creating user", error as Error);
     return serverErrorResponse("Failed to create user");
