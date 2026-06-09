@@ -1,5 +1,5 @@
 import { Schema, model, Document, models } from "mongoose";
-import { SampleData } from "@/lib/types";
+import { SampleData as SampleDataType } from "@/lib/types";
 
 /**
  * SAMPLE DATA MODEL (FOR CRUD)
@@ -13,27 +13,27 @@ import { SampleData } from "@/lib/types";
  * - createdAt/updatedAt: Timestamps
  */
 
-interface SampleDataDocument extends SampleData, Document {}
 
-const sampleDataSchema = new Schema<SampleDataDocument>(
+
+const sampleDataSchema = new Schema<SampleDataType>(
   {
     userId: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     apiId: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     data: {
       type: Schema.Types.Mixed,
-      required: true
-    }
+      required: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const SampleData =
-  models.SampleData || model<SampleDataDocument>("SampleData", sampleDataSchema);
+  models.SampleData || model<SampleDataType>("SampleData", sampleDataSchema);
