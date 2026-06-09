@@ -82,7 +82,7 @@ export default function DashboardPage() {
         {tab === "logs" && (
           <section>
             <h2 className="text-lg font-medium mb-4">Logs</h2>
-            <Logger />
+            <LoggerComponent />
           </section>
         )}
       </main>
